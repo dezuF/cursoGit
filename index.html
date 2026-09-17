@@ -13,8 +13,16 @@
 <header class="header">
   <nav class="navbar" aria-label="Navegación principal">
     <a class="logo" href="#inicio">Botánica Verde</a>
-    <button class="menu-btn" aria-label="Abrir menú">☰</button>
-    <ul class="nav-links">
+    <button
+  class="menu-btn"
+  type="button"
+  aria-label="Abrir menú"
+  aria-expanded="false"
+  aria-controls="menu-principal"
+>
+  ☰
+</button>
+    <ul class="nav-links" id="menu-principal">
       <li><a href="#inicio">Inicio</a></li>
       <li><a href="#nosotros">Nosotros</a></li>
       <li><a href="#colecciones">Colecciones</a></li>

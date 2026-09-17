@@ -1,187 +1,201 @@
 const menuBtn = document.querySelector(".menu-btn");
 const navLinks = document.querySelector(".nav-links");
+const navbar = document.querySelector(".navbar");
+const hero = document.querySelector(".hero");
 
+/* Menú para celulares */
 menuBtn.addEventListener("click", () => {
-    navLinks.classList.toggle("active");
+    const menuAbierto = navLinks.classList.toggle("active");
+
+    menuBtn.setAttribute("aria-expanded", menuAbierto);
+    menuBtn.setAttribute(
+        "aria-label",
+        menuAbierto ? "Cerrar menú" : "Abrir menú"
+    );
+
+    menuBtn.textContent = menuAbierto ? "×" : "☰";
 });
 
-
-document.querySelectorAll(".nav-links a").forEach(link => {
+/* Cerrar menú al seleccionar un enlace */
+document.querySelectorAll(".nav-links a").forEach((link) => {
     link.addEventListener("click", () => {
         navLinks.classList.remove("active");
+        menuBtn.setAttribute("aria-expanded", "false");
+        menuBtn.setAttribute("aria-label", "Abrir menú");
+        menuBtn.textContent = "☰";
     });
 });
 
-
-const navbar = document.querySelector(".navbar");
+/* Cambiar la barra de navegación al desplazarse */
+let scrollPendiente = false;
 
 window.addEventListener("scroll", () => {
+    if (!scrollPendiente) {
+        window.requestAnimationFrame(() => {
+            navbar.classList.toggle("scrolled", window.scrollY > 50);
 
-    if(window.scrollY > 50){
-        navbar.classList.add("scrolled");
-    }else{
-        navbar.classList.remove("scrolled");
+            /* Efecto de movimiento de la portada */
+            if (window.innerWidth > 900) {
+                const movimiento = window.scrollY * 0.18;
+                hero.style.backgroundPositionY = `${movimiento}px`;
+            }
+
+            scrollPendiente = false;
+        });
+
+        scrollPendiente = true;
     }
-
 });
 
+/* Animaciones de aparición */
 const elementosReveal = document.querySelectorAll(".reveal");
 
-
-const observer = new IntersectionObserver((entradas)=>{
-
-    entradas.forEach(entrada=>{
-
-        if(entrada.isIntersecting){
-
-            entrada.target.classList.add("show");
-
-        }
-
-    });
-
-},{
-    threshold:0.15
+elementosReveal.forEach((elemento, indice) => {
+    elemento.style.setProperty("--delay", `${(indice % 4) * 100}ms`);
 });
 
+const observer = new IntersectionObserver(
+    (entradas) => {
+        entradas.forEach((entrada) => {
+            if (entrada.isIntersecting) {
+                entrada.target.classList.add("show");
+                observer.unobserve(entrada.target);
+            }
+        });
+    },
+    {
+        threshold: 0.15,
+        rootMargin: "0px 0px -40px 0px"
+    }
+);
 
-elementosReveal.forEach(elemento=>{
+elementosReveal.forEach((elemento) => {
     observer.observe(elemento);
 });
 
+/* Contadores animados */
 const counters = document.querySelectorAll(".counter");
 
-
-const counterObserver = new IntersectionObserver((entradas)=>{
-
-    entradas.forEach(entrada=>{
-
-        if(entrada.isIntersecting){
+const counterObserver = new IntersectionObserver(
+    (entradas) => {
+        entradas.forEach((entrada) => {
+            if (!entrada.isIntersecting) return;
 
             const counter = entrada.target;
+            const objetivo = Number(counter.dataset.target);
+            const duracion = 1600;
+            const tiempoInicial = performance.now();
 
-            const objetivo = +counter.dataset.target;
+            const actualizar = (tiempoActual) => {
+                const progreso = Math.min(
+                    (tiempoActual - tiempoInicial) / duracion,
+                    1
+                );
 
-            let inicio = 0;
+                const progresoSuave = 1 - Math.pow(1 - progreso, 3);
+                const valorActual = Math.floor(objetivo * progresoSuave);
 
-            const velocidad = objetivo / 100;
+                counter.textContent = valorActual.toLocaleString("es-ES");
 
-
-            const actualizar = ()=>{
-
-                inicio += velocidad;
-
-
-                if(inicio < objetivo){
-
-                    counter.innerHTML = Math.floor(inicio);
-
+                if (progreso < 1) {
                     requestAnimationFrame(actualizar);
-
-                }else{
-
-                    counter.innerHTML = objetivo + "+";
-
+                } else {
+                    counter.textContent =
+                        objetivo.toLocaleString("es-ES") + "+";
                 }
-
             };
 
-
-            actualizar();
-
-
+            requestAnimationFrame(actualizar);
             counterObserver.unobserve(counter);
+        });
+    },
+    {
+        threshold: 0.7
+    }
+);
 
-        }
-
-    });
-
-},{
-    threshold:0.7
-});
-
-
-counters.forEach(counter=>{
+counters.forEach((counter) => {
     counterObserver.observe(counter);
 });
 
+/* Galería y ventana modal */
 const galleryImages = document.querySelectorAll(".gallery-img");
 const modal = document.querySelector(".modal");
 const modalImg = document.querySelector(".modal img");
 const closeModal = document.querySelector(".close");
 
+const abrirModal = (imagen) => {
+    modalImg.src = imagen.src;
+    modalImg.alt = imagen.alt;
 
-galleryImages.forEach(img=>{
+    modal.classList.add("active");
+    document.body.classList.add("modal-open");
+    closeModal.focus();
+};
 
-    img.addEventListener("click",()=>{
+const cerrarModal = () => {
+    modal.classList.remove("active");
+    document.body.classList.remove("modal-open");
 
-        modal.style.display="flex";
+    setTimeout(() => {
+        modalImg.src = "";
+    }, 350);
+};
 
-        modalImg.src = img.src;
+galleryImages.forEach((img) => {
+    img.setAttribute("tabindex", "0");
 
+    img.addEventListener("click", () => {
+        abrirModal(img);
     });
 
+    img.addEventListener("keydown", (evento) => {
+        if (evento.key === "Enter" || evento.key === " ") {
+            evento.preventDefault();
+            abrirModal(img);
+        }
+    });
 });
 
+closeModal.addEventListener("click", cerrarModal);
 
-
-closeModal.addEventListener("click",()=>{
-
-    modal.style.display="none";
-
-});
-
-
-
-modal.addEventListener("click",(e)=>{
-
-    if(e.target === modal){
-
-        modal.style.display="none";
-
+modal.addEventListener("click", (evento) => {
+    if (evento.target === modal) {
+        cerrarModal();
     }
-
 });
 
-const hero = document.querySelector(".hero");
-
-
-window.addEventListener("scroll",()=>{
-
-    let movimiento = window.scrollY * 0.3;
-
-    hero.style.backgroundPositionY = movimiento + "px";
-
+document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape" && modal.classList.contains("active")) {
+        cerrarModal();
+    }
 });
 
+/* Botones de las colecciones */
 const botones = document.querySelectorAll(".card button");
 
+botones.forEach((boton) => {
+    boton.addEventListener("click", () => {
+        if (boton.disabled) return;
 
-botones.forEach(boton=>{
+        const textoOriginal = boton.textContent;
 
-    boton.addEventListener("click",()=>{
+        boton.disabled = true;
+        boton.textContent = "Explorando 🌱";
+        boton.style.background = "#dca72c";
 
-        boton.innerHTML="Explorando 🌱";
-
-        boton.style.background="#e9a62c";
-
-
-        setTimeout(()=>{
-
-            boton.innerHTML="Descubrir";
-
-            boton.style.background="#2f7d46";
-
-        },2000);
-
+        setTimeout(() => {
+            boton.textContent = textoOriginal;
+            boton.style.background = "";
+            boton.disabled = false;
+        }, 2000);
     });
-
 });
 
-window.addEventListener("load",()=>{
+window.addEventListener("load", () => {
+    navbar.classList.toggle("scrolled", window.scrollY > 50);
 
     console.log(
         "🌿 Bienvenido a Botánica Verde - Jardín Botánico"
     );
-
 });
